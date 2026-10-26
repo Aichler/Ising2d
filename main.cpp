@@ -51,6 +51,18 @@ void algoritm_Metropolis()
 
 std::vector<std::vector<int>> lattice(L, std::vector<int>(L, 0));
 
+spin** lattice = new spin* [L];
+	for (int i = 0; i < L; i++)
+	{
+		lattice[i] = new spin* [L]
+		for (int j = 0; j < L; j++)
+		{
+			lattice[i][j] = new spin[L];
+		}
+	}
+
+
+
 fill_random(lattice);
 
 		  for (int mcs = 0; mcs < maxMCS; ++mcs)
@@ -63,20 +75,23 @@ fill_random(lattice);
 					  j = rund(1,L);
 
 					  spin = E1;
-					  
+					  lattice[i][j] = get_random_spin();
 					  E2 = lattice[i][j];
+
+					  //Вычисление энергий Е1 и Е2
 
 					  if (E1>E2)
 					  {
-					  spin = lattice[i][j];
+					  	spin = lattice[i][j];
 					  }
 					  else
 					  {
-					  const double Z = exp(-(E2-E1)/T); 
-					  rund = rund(0,1);
+						  const double Z = exp(-(E2-E1)/T); 
+						  rund = rund(0,1);
+
 					  if (Z < rund)
 					  {
-					  spin = lattice[i][j];	
+					  	spin = lattice[i][j];	
 					  }
 					  }
 			  }
