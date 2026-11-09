@@ -13,8 +13,18 @@ const int maxmcs = 10000;
 const int static_configuration = 100;
 */
 
+inline spin get_random_spin()
+{
+	spin rundom_spin;
 
-void fill_random(std::vector<std::vector<int>>& lattice)
+	rundom_spin.z = rund_z();
+
+	return rundom_spin;
+}
+
+
+
+void full_random(std::vector<std::vector<int>>& lattice)
 {
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -32,16 +42,29 @@ void fill_random(std::vector<std::vector<int>>& lattice)
 
 }
 
-int sum_neighbors(const std::vector<std::vector<int>>& lattice, int i, int j) //Сделал граничные условия(периодические)
+
+double sum_neighbors(const std::vector<std::vector<int>>& lattice, int i, int j) //Сделал граничные условия(периодические)
 {
 	int L = (int)lattice.size();
-	int up     = lattice[(i - 1 + L) % L][j];
-	int down   = lattice[(i + 1) % L][j];
-	int left   = lattice[i][(j - 1 + L) % L];
-	int right  = lattice[i][(j + 1) % L];
-
-	return up + down + left + right;
+	double energy = 0;
+	// int up     = lattice[(i - 1 + L) % L][j];
+	// int down   = lattice[(i + 1) % L][j];
+	// int left   = lattice[i][(j - 1 + L) % L];
+	// int right  = lattice[i][(j + 1) % L];
+	energy += get_energy_two_spin(lattice[i][j], lattice[(i - 1 + L) % L][j]);
+	energy += get_energy_two_spin(lattice[i][j], lattice[(i + 1) % L][j]);
+	energy += get_energy_two_spin(lattice[i][j], lattice[i][(j - 1 + L) % L]);
+	energy += get_energy_two_spin(lattice[i][j], lattice[i][(j + 1) % L]);
+	return energy;
 }
+
+double get_energy_two_spin()
+{
+
+
+
+}
+
 
 void algoritm_Metropolis()
   {
@@ -63,7 +86,7 @@ spin** lattice = new spin* [L];
 
 
 
-fill_random(lattice);
+full_random(lattice);
 
 		  for (int mcs = 0; mcs < maxMCS; ++mcs)
 		  {
@@ -71,14 +94,14 @@ fill_random(lattice);
 
 			  for (int n = 0; n < L*L; ++n)
 			  {
-					  i = rund(1,L);
-					  j = rund(1,L);
+					 i = rund(1,L);
+					 j = rund(1,L);
 
-					  spin = E1;
-					  lattice[i][j] = get_random_spin();
-					  E2 = lattice[i][j];
+					 const spin selected_spin = lattice[i][j];
+					 const double E1 = get_energy_neighbors(lattice[i][j], i, j);
 
-					  //Вычисление энергий Е1 и Е2
+					 lattice[i][j] = get_random_spin();
+					 const double E2 = get_energy_neighbors(lattice[i][j], i, j);
 
 					  if (E1>E2)
 					  {
@@ -91,7 +114,7 @@ fill_random(lattice);
 
 					  if (Z < rund)
 					  {
-					  	spin = lattice[i][j];	
+					  	lattice[i][j] = selected_spin;	
 					  }
 					  }
 			  }
