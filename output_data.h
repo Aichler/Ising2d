@@ -13,4 +13,5 @@ struct output_data
 {
 double e = 0.0;
 double e2 = 0.0;
+double magnetization = 0.0;
 };
