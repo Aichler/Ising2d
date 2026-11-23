@@ -2,161 +2,123 @@
 #include <math.h>
 #include <vector>
 #include <random>
+#include <string>
+#include <ctime>
 #include "config.h"
-#include <data_work.cpp>
+#include "spin.h"
+#include "data_work.h"
+// #include "output_data.h"      
+#include <filesystem>
 
-/*			Конфиг
-const int  l = 16;
-const double t = 4.5;
-const int j = -1;
-const int maxmcs = 10000;
-const int static_configuration = 100;
-*/
 
-inline spin get_random_spin()
+inline int get_random_spin()
 {
-	spin rundom_spin;
-
-	rundom_spin.z = rund_z();
-
-	return rundom_spin;
+	return (rand() % 2 == 0) ? 1 : -1; 
 }
 
-
-
-void full_random(std::vector<std::vector<int>>& lattice)
+double get_energy_two_spin(const spin& sp_1, const spin& sp_2)
 {
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::bernoulli_distribution coin (0.5);
-
-	for (int i = 0; i < (int)lattice.size(); i++)
-	{
-		for (int j = 0; j < (int)lattice[i].size(); j++)
-		{
-			lattice[i][j] = +1;			
-		}
-	}
-
-
-
+    return (-J*(sp_1.z * sp_2.z));
 }
 
-
-double sum_neighbors(const std::vector<std::vector<int>>& lattice, int i, int j) //Сделал граничные условия(периодические)
+double get_energy_neighbors(spin const *const *const sp, int const& i, int const& j) noexcept
 {
-	int L = (int)lattice.size();
 	double energy = 0;
-	// int up     = lattice[(i - 1 + L) % L][j];
-	// int down   = lattice[(i + 1) % L][j];
-	// int left   = lattice[i][(j - 1 + L) % L];
-	// int right  = lattice[i][(j + 1) % L];
-	energy += get_energy_two_spin(lattice[i][j], lattice[(i - 1 + L) % L][j]);
-	energy += get_energy_two_spin(lattice[i][j], lattice[(i + 1) % L][j]);
-	energy += get_energy_two_spin(lattice[i][j], lattice[i][(j - 1 + L) % L]);
-	energy += get_energy_two_spin(lattice[i][j], lattice[i][(j + 1) % L]);
+	energy += get_energy_two_spin(sp[i][j], sp[(i - 1 + L) % L][j]);
+	energy += get_energy_two_spin(sp[i][j], sp[(i + 1) % L][j]);
+	energy += get_energy_two_spin(sp[i][j], sp[i][(j - 1 + L) % L]);
+	energy += get_energy_two_spin(sp[i][j], sp[i][(j + 1) % L]);
 	return energy;
 }
 
-double get_energy_two_spin()
-{
-
-
-
+double get_total_energy(spin** lattice) {
+	double total_energy = 0;
+	for (int i = 0; i < L; i++){
+		for (int j = 0; j < L; j++){
+		 total_energy += get_energy_neighbors(lattice, i, j);
+		}
+	}
+	return total_energy / 2.0; 
 }
-
 
 void algoritm_Metropolis()
-  {
-
-	  for (int step = 0; step < static_configuration; ++step)
-	  {
-
-std::vector<std::vector<int>> lattice(L, std::vector<int>(L, 0));
-
-spin** lattice = new spin* [L];
-	for (int i = 0; i < L; i++)
-	{
-		lattice[i] = new spin* [L]
-		for (int j = 0; j < L; j++)
-		{
-			lattice[i][j] = new spin[L];
-		}
-	}
-
-
-
-full_random(lattice);
-
-		  for (int mcs = 0; mcs < maxMCS; ++mcs)
-		  {
-
-
-			  for (int n = 0; n < L*L; ++n)
-			  {
-					 i = rund(1,L);
-					 j = rund(1,L);
-
-					 const spin selected_spin = lattice[i][j];
-					 const double E1 = get_energy_neighbors(lattice[i][j], i, j);
-
-					 lattice[i][j] = get_random_spin();
-					 const double E2 = get_energy_neighbors(lattice[i][j], i, j);
-
-					  if (E1>E2)
-					  {
-					  	spin = lattice[i][j];
-					  }
-					  else
-					  {
-						  const double Z = exp(-(E2-E1)/T); 
-						  rund = rund(0,1);
-
-					  if (Z < rund)
-					  {
-					  	lattice[i][j] = selected_spin;	
-					  }
-					  }
-			  }
-
-		  Data_work::updata_output_data();
-
-		  }	
-
-
-
-
-	  }
-
-  }
-
-void print (std::vector<std::vector<int>> const lattice)
 {
-	for(int i = 0; i < L; i++)
+	std::vector<output_data> data_for_file(maxMCS);
+
+
+	for (int step = 0; step < static_configuration; ++step)
 	{
-		for (int j = 0; j < L; j++)
-		{
-			std::cout << lattice[i][j] << ' ';
-		}
-		std::cout << '\n';
+
+		    spin** lattice = new spin*[L];
+    for (int i = 0; i < L; ++i) {
+        lattice[i] = new spin[L];
+    }
+
+
+
+		//std::string filename = "data/energy_step_" + std::to_string(step) +".txt";
+		//Data_work::init(filename);
+	     
+		for(int mcs = 0; mcs < maxMCS; mcs++){
+			for (int n = 0; n < L * L; n++){
+				int i = rand() % L;
+				int j = rand() % L;
+			
+				spin selected_spin = lattice[i][j];
+				double E1 = get_energy_neighbors(lattice, i, j);
+
+				lattice[i][j].z = get_random_spin();
+				double E2 = get_energy_neighbors(lattice, i, j);
+				
+				double dE = E2 - E1;
+				double r = (double)rand() / RAND_MAX;
+				
+				if (dE > 0 && r >= exp(-dE / T)) {
+					lattice[i][j] = selected_spin;
+				}
+			}	
+			double total_E = get_total_energy(lattice);
+			Data_work::update_output_data(lattice, data_for_file[mcs]);
+		} 		
+		//Data_work::close();
+
+		    for (int i = 0; i < L; ++i) {
+        delete[] lattice[i];
+    }
+    delete[] lattice;
 	}
+
+
+	Data_work::data_output(&data_for_file);
+
+
 }
+
 int main()
 {
-	
-	              /*инициализация спинов*/
-	//fill_random(lattice);
-	//print(lattice);
+	srand(time(0));
 
-	//Тест граничных условий
-	for (int i = 0; i < L; ++i)
-		for (int j = 0; j < L; ++j)
-			lattice[i][j] = +1;
 
-	std::cout << sum_neighbors(lattice, 0, 0) << '\n';   
-	std::cout << sum_neighbors(lattice, 0, 5) << '\n';   
-	std::cout << sum_neighbors(lattice, 8, 8) << '\n';   	
+
+    // for (int i = 0; i < L; ++i) {
+    //     for (int j = 0; j < L; ++j) {
+    //         lattice[i][j].z = +1;
+    //     }
+    // }
+
+    // std::cout << "Test energy: " << get_energy_neighbors(lattice, 0, 0) << '\n';
+
+    // for (int i = 0; i < L; ++i) {
+    //     for (int j = 0; j < L; ++j) {
+    //         lattice[i][j].z = get_random_spin();
+    //     }
+    // }
+
+    std::cout << "Starting simulation..." << std::endl;
+    algoritm_Metropolis();
+    std::cout << "Done!" << std::endl;
+
+
 
 	return 0;
 }
-
